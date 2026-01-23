@@ -1,0 +1,15 @@
+src/components/Card/Card.tsx(19,28): error TS2339: Property 'header' does not exist on type 'CardStylesType'.
+  Property 'header' does not exist on type '((info: { props: CardProps; }) => Readonly<CardSemanticStyles>) & EmptyObject'.
+src/components/Card/Card.tsx(23,28): error TS2339: Property 'body' does not exist on type 'CardStylesType'.
+  Property 'body' does not exist on type '((info: { props: CardProps; }) => Readonly<CardSemanticStyles>) & EmptyObject'.
+src/components/Table/Table.tsx(2,1): error TS6133: 'React' is declared but its value is never read.
+src/hooks/useDashboard.ts(19,17): error TS6133: 'setStats' is declared but its value is never read.
+src/hooks/useDashboard.ts(26,20): error TS6133: 'setProjects' is declared but its value is never read.
+src/layouts/Authenticated.tsx(39,12): error TS6198: All destructured elements are unused.
+src/pages/forgot-password.tsx(7,25): error TS6133: 'Card' is declared but its value is never read.
+src/pages/jobs.tsx(17,3): error TS6133: 'InfoCircleOutlined' is declared but its value is never read.
+src/pages/register.tsx(6,3): error TS6133: 'UserOutlined' is declared but its value is never read.
+src/pages/verify.tsx(4,1): error TS6192: All imports in import declaration are unused.
+src/pages/verify.tsx(8,16): error TS6133: 'Text' is declared but its value is never read.
+src/pages/verify.tsx(15,9): error TS6133: 'navigate' is declared but its value is never read.
+src/services/socket.ts(3,36): error TS2339: Property 'VITE_SOCKET_URL' does not exist on type 'ImportMetaEnv'.

@@ -1,0 +1,98 @@
+.container {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+}
+
+.header {
+  margin-bottom: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+@media (max-width: 576px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.uploadCard {
+  border-radius: 16px;
+  border: 1px dashed #d1d5db;
+  background: #f9fafb;
+}
+
+.dragger {
+  background: transparent !important;
+  border: none !important;
+}
+
+.tableCard {
+  border-radius: 16px;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.tableHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .tableHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tableHeader :global(.ant-space) {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tableHeader :global(.ant-input-affix-wrapper) {
+    width: 100% !important;
+  }
+}
+
+.tableCard :global(.ant-table-thead > tr > th) {
+  background: #f8fafc;
+  font-weight: 600;
+}
+
+.tableCard :global(.ant-table-row) {
+  cursor: default;
+}
+
+.tableCard :global(.ant-table-row:hover > td) {
+  background: #f1f5f9 !important;
+}
+
+.itemNameTable:hover {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+.tableCard :global(.ant-table) {
+  overflow-x: auto;
+}

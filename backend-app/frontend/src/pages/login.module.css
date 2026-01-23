@@ -1,0 +1,87 @@
+.container {
+  width: 100%;
+}
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.title {
+  margin-bottom: 8px !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+  letter-spacing: -0.5px;
+}
+.subtitle {
+  color: #64748b;
+  font-size: 15px;
+}
+.form :global(.ant-form-item-label) {
+  padding-bottom: 8px !important;
+}
+.label {
+  font-weight: 600;
+  color: #475569;
+  font-size: 14px;
+}
+.labelWrapper {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  align-items: center;
+}
+.input {
+  border-radius: 12px !important;
+  padding: 10px 16px !important;
+  border-color: #e2e8f0 !important;
+  transition: all 0.2s ease !important;
+}
+.input:hover,
+.input:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 4px var(--primary-glow) !important;
+}
+.inputIcon {
+  color: #94a3b8;
+  margin-right: 8px;
+}
+.forgotPassword {
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+.checkbox {
+  color: #64748b !important;
+  font-size: 14px;
+}
+.submitBtn {
+  height: 52px !important;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  font-size: 16px !important;
+  background: var(--primary) !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px;
+  box-shadow: 0 10px 15px -3px var(--primary-glow) !important;
+}
+.submitBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 25px -5px var(--primary-glow) !important;
+}
+.footer {
+  margin-top: 24px;
+  text-align: center;
+}
+.footerText {
+  color: #64748b;
+  font-size: 14px;
+}
+.signupLink {
+  color: var(--primary);
+  font-weight: 600;
+}
+.result {
+  padding: 0 !important;
+}

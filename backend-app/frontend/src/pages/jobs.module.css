@@ -1,0 +1,13 @@
+.addBtn {
+  height: 48px !important;
+  border-radius: 12px !important;
+  padding: 0 24px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 10px 15px -3px var(--primary-glow) !important;
+}
+.searchBar {
+  border-radius: 12px !important;
+  background: #f1f5f9 !important;
+  border: none !important;
+  padding: 10px 16px !important;
+}

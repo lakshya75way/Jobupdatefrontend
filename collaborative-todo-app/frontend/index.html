@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Collaborative todo app with offline-first architecture"
+    />
+    <title>Collaborative Todo - Work Together, Even Offline</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              background: {
+                primary: "var(--color-bg-primary)",
+                secondary: "var(--color-bg-secondary)",
+                tertiary: "var(--color-bg-tertiary)",
+              },
+              text: {
+                primary: "var(--color-text-primary)",
+                secondary: "var(--color-text-secondary)",
+                muted: "var(--color-text-muted)",
+              },
+              accent: {
+                primary: "var(--color-accent-primary)",
+                secondary: "var(--color-accent-secondary)",
+              },
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

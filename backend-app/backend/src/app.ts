@@ -1,0 +1,20 @@
+import express from "express";
+import cors from "cors";
+import swaggerUi from "swagger-ui-express";
+import { specs } from "./config/swagger";
+import authRoutes from "./modules/auth/auth.routes";
+import jobRoutes from "./modules/jobs/job.routes";
+import uploadRoutes from "./modules/uploads/upload.routes";
+import { globalErrorHandler } from "./middlewares/error.middleware";
+const app = express();
+app.use(cors());
+app.use(express.json());
+app.get("/", (_req, res) => {
+  res.json({ message: "Welcome to the Backend API" });
+});
+app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(specs));
+app.use("/api/auth", authRoutes);
+app.use("/api/jobs", jobRoutes);
+app.use("/api/uploads", uploadRoutes);
+app.use(globalErrorHandler);
+export default app;
