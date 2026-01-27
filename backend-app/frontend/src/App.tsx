@@ -1,16 +1,16 @@
 import React from "react";
 import { App as AntdApp } from "antd";
 import { RouterProvider } from "react-router-dom";
-import { router } from "./router";
+import { router } from "./router/appRouter";
 import { useRestoreSession } from "./hooks/useRestoreSession";
-import { notificationService } from "./services/notification.service";
+import { notificationService } from "./services/notificationService";
+import { ErrorBoundary } from "./components";
 import "./variables.css";
 
 const GlobalStaticApp: React.FC = () => {
   const { notification, message, modal } = AntdApp.useApp();
 
   React.useEffect(() => {
-    // Attach to our singleton service to avoid "static function can not consume context" warnings
     notificationService.setAntdInstances({
       notification,
       message,
@@ -24,10 +24,10 @@ const GlobalStaticApp: React.FC = () => {
 const App: React.FC = () => {
   useRestoreSession();
   return (
-    <>
+    <ErrorBoundary>
       <GlobalStaticApp />
       <RouterProvider router={router} />
-    </>
+    </ErrorBoundary>
   );
 };
 export default App;

@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Build
+dist/
+backend/dist/
+frontend/dist/
+frontend/dist-ssr/
+*.tsbuildinfo
+
+# OS local files
+.DS_Store
+.DS_Store?
+*/**/.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+backend/*.log
+frontend/*.log
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Editor folders
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project specific
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Temporary Documentation
+*.md
+!README.md
+!frontend/README.md
+!backend/README.md

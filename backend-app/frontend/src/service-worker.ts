@@ -1,6 +1,8 @@
-/// <reference lib="webworker" />
+import { precacheAndRoute } from "workbox-precaching";
 
 declare const self: ServiceWorkerGlobalScope;
+
+precacheAndRoute(self.__WB_MANIFEST);
 
 export {};
 
@@ -35,9 +37,7 @@ self.addEventListener("push", (event: PushEvent) => {
       } as NotificationOptions;
 
       event.waitUntil(self.registration.showNotification(data.title, options));
-    } catch (err) {
-      // Silent fail - notification display is best-effort
-    }
+    } catch (err) {}
   }
 });
 
@@ -54,13 +54,12 @@ self.addEventListener("notificationclick", (event: NotificationEvent) => {
       self.clients
         .matchAll({ type: "window", includeUncontrolled: true })
         .then((windowClients) => {
-          // Try to focus existing window
           for (const client of windowClients) {
             if (client.url === urlToOpen && "focus" in client) {
               return (client as WindowClient).focus();
             }
           }
-          // If no window found, open new one
+
           if (self.clients.openWindow) {
             return self.clients.openWindow(urlToOpen);
           }

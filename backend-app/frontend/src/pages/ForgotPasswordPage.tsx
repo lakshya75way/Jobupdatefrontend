@@ -1,27 +1,25 @@
 import React, { useState } from "react";
-import { Form, Typography, message, Result } from "antd";
+import { Form, Typography, App, Result } from "antd";
 import { MailOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import { Link } from "react-router-dom";
-import api from "../services/api";
-import styles from "./login.module.css";
+import api from "../services/apiClient";
+import styles from "./LoginPage.module.css";
 import { Button, Input } from "../components";
-import { AxiosError } from "axios";
+
 const { Title, Text } = Typography;
-interface ForgotPasswordValues {
-  email: string;
-}
 const ForgotPasswordPage: React.FC = () => {
+  const { message } = App.useApp();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSent, setIsSent] = useState<boolean>(false);
-  const onFinish = async (values: ForgotPasswordValues) => {
+  const onFinish = async (values: { email: string }) => {
     setIsLoading(true);
     try {
-      await api.post("/auth/forgot-password", { email: values.email });
+      await api.post("/auth/forgot-password", values);
       setIsSent(true);
-      message.success("Reset link sent to your email!");
-    } catch (err: unknown) {
-      const error = err as AxiosError<{ message?: string }>;
-      message.error(error.response?.data?.message || "Something went wrong.");
+      message.success("Password reset link sent to your email!");
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message.error(err.response?.data?.message || "Something went wrong");
     } finally {
       setIsLoading(false);
     }

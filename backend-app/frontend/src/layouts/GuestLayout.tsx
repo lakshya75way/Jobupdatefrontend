@@ -2,11 +2,11 @@ import React from "react";
 import { Outlet, Navigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { Layout, Typography } from "antd";
-import styles from "./Guest.module.css";
+import styles from "./GuestLayout.module.css";
 import { Card } from "../components";
 const { Content } = Layout;
 const { Title } = Typography;
-const Guest: React.FC = () => {
+const GuestLayout: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
   if (isAuthenticated && user) {
     return <Navigate to="/dashboard" replace />;
@@ -31,4 +31,4 @@ const Guest: React.FC = () => {
     </Layout>
   );
 };
-export default Guest;
+export default GuestLayout;

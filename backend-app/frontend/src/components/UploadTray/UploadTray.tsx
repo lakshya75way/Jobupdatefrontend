@@ -1,5 +1,5 @@
-import React from "react";
-import { useAppSelector, useAppDispatch } from "../../store";
+import React, { useMemo } from "react";
+import { useAppSelector, useAppDispatch } from "../../store/appStore";
 import {
   toggleTray,
   clearCompleted,
@@ -15,8 +15,10 @@ import {
   DownOutlined,
   CloudUploadOutlined,
 } from "@ant-design/icons";
-import { Progress, Button, Tooltip, message } from "antd";
-import { openFile } from "../../services/upload.service";
+import { Progress, Button, Tooltip } from "antd";
+import { openFile } from "../../services/fileUploadService";
+import { notificationService } from "../../services/notificationService";
+import useFileUpload from "../../hooks/useFileUpload";
 import styles from "./UploadTray.module.css";
 
 const UploadTray: React.FC = () => {
@@ -24,22 +26,35 @@ const UploadTray: React.FC = () => {
     (state) => state.upload || { items: [], isExpanded: false },
   );
   const dispatch = useAppDispatch();
+  const { cancelUpload } = useFileUpload();
 
-  if (items.length === 0) return null;
+  const counts = useMemo(
+    () => ({
+      uploading: items.filter((item) => item.status === "uploading").length,
+      completed: items.filter((item) => item.status === "completed").length,
+      failed: items.filter((item) => item.status === "failed").length,
+    }),
+    [items],
+  );
 
-  const uploadingCount = items.filter((i) => i.status === "uploading").length;
-  const completedCount = items.filter((i) => i.status === "completed").length;
-  const failedCount = items.filter((i) => i.status === "failed").length;
+  const handleRemove = (item: UploadItem) => {
+    if (item.status === "uploading") {
+      cancelUpload(item.id);
+    }
+    dispatch(removeUpload(item.id));
+  };
 
   const handleItemClick = async (item: UploadItem) => {
     if (item.status === "completed" && item.backendId) {
       try {
         await openFile(item.backendId);
       } catch (error: unknown) {
-        message.error("Failed to open file");
+        notificationService.message.error("Failed to open file");
       }
     }
   };
+
+  if (items.length === 0) return null;
 
   return (
     <div
@@ -49,8 +64,8 @@ const UploadTray: React.FC = () => {
         <div className={styles.headerTitle}>
           <CloudUploadOutlined className={styles.uploadIcon} />
           <span>
-            {uploadingCount > 0
-              ? `Uploading ${uploadingCount} items...`
+            {counts.uploading > 0
+              ? `Uploading ${counts.uploading} items...`
               : "Uploads complete"}
           </span>
         </div>
@@ -79,13 +94,13 @@ const UploadTray: React.FC = () => {
       {isExpanded && (
         <div className={styles.body}>
           <div className={styles.summary}>
-            {completedCount > 0 && (
+            {counts.completed > 0 && (
               <span className={styles.successText}>
-                {completedCount} successful
+                {counts.completed} successful
               </span>
             )}
-            {failedCount > 0 && (
-              <span className={styles.errorText}>{failedCount} failed</span>
+            {counts.failed > 0 && (
+              <span className={styles.errorText}>{counts.failed} failed</span>
             )}
           </div>
           <div className={styles.itemList}>
@@ -120,7 +135,7 @@ const UploadTray: React.FC = () => {
                       icon={<CloseOutlined style={{ fontSize: 10 }} />}
                       onClick={(e) => {
                         e.stopPropagation();
-                        dispatch(removeUpload(item.id));
+                        handleRemove(item);
                       }}
                       className={styles.removeBtn}
                     />

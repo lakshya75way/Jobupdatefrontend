@@ -1,52 +1,61 @@
-import React, { useState } from "react";
-import { Form, Typography, message } from "antd";
+import React, { useState, useCallback } from "react";
+import { Form, Typography, App } from "antd";
 import {
   MailOutlined,
   LockOutlined,
   ArrowRightOutlined,
 } from "@ant-design/icons";
 import { Link, useNavigate } from "react-router-dom";
-import api from "../services/api";
-import styles from "./login.module.css"; // Reusing premium styles
+import api from "../services/apiClient";
+import styles from "./LoginPage.module.css";
 import { RegisterResponse } from "../types/auth";
 import { AxiosError } from "axios";
 import { Button, Input } from "../components";
+
 const { Title, Text } = Typography;
+
 interface SignupFormValues {
   email: string;
   password: string;
   confirm: string;
 }
-const SignupPage: React.FC = () => {
+
+const RegisterPage: React.FC = () => {
+  const { message } = App.useApp();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigate = useNavigate();
-  const onFinish = async (values: SignupFormValues) => {
-    setIsLoading(true);
-    try {
-      await api.post<RegisterResponse>("/auth/signup", {
-        email: values.email,
-        password: values.password,
-      });
-      message.success("Account created! Please verify your email.");
-      navigate("/login");
-    } catch (err: unknown) {
-      const error = err as AxiosError<{
-        message?: string;
-        errors?: { message: string }[];
-      }>;
-      if (error.response?.data?.errors?.length) {
-        error.response.data.errors.forEach((e) => {
-          message.error(e.message);
+
+  const onFinish = useCallback(
+    async (values: SignupFormValues) => {
+      setIsLoading(true);
+      try {
+        await api.post<RegisterResponse>("/auth/signup", {
+          email: values.email,
+          password: values.password,
         });
-      } else {
-        message.error(
-          error.response?.data?.message || "Failed to create account.",
-        );
+        message.success("Account created! Please verify your email.");
+        navigate("/login");
+      } catch (err: unknown) {
+        const error = err as AxiosError<{
+          message?: string;
+          errors?: { message: string }[];
+        }>;
+        if (error.response?.data?.errors?.length) {
+          error.response.data.errors.forEach((e) => {
+            message.error(e.message);
+          });
+        } else {
+          message.error(
+            error.response?.data?.message || "Failed to create account.",
+          );
+        }
+      } finally {
+        setIsLoading(false);
       }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    [message, navigate],
+  );
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -149,4 +158,5 @@ const SignupPage: React.FC = () => {
     </div>
   );
 };
-export default SignupPage;
+
+export default RegisterPage;

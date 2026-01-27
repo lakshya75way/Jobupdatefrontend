@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";
 import { ConfigProvider, theme, App as AntdApp } from "antd";
-import { store } from "./store";
+import { store } from "./store/appStore";
 import App from "./App";
 import "./variables.css";
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -18,7 +18,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           },
         }}
       >
-        <AntdApp>
+        <AntdApp message={{ maxCount: 1 }}>
           <App />
         </AntdApp>
       </ConfigProvider>

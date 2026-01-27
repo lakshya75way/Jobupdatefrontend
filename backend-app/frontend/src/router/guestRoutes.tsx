@@ -1,37 +1,37 @@
 import { RouteObject } from "react-router-dom";
-import Guest from "../layouts/Guest";
+import GuestLayout from "../layouts/GuestLayout";
 
 const guestRouter: RouteObject = {
-  element: <Guest />,
+  element: <GuestLayout />,
   children: [
     {
       path: "login",
       lazy: () =>
-        import("../pages/login").then((m) => ({ Component: m.default })),
+        import("../pages/LoginPage").then((m) => ({ Component: m.default })),
     },
     {
       path: "signup",
       lazy: () =>
-        import("../pages/register").then((m) => ({ Component: m.default })),
+        import("../pages/RegisterPage").then((m) => ({ Component: m.default })),
     },
     {
       path: "forgot-password",
       lazy: () =>
-        import("../pages/forgot-password").then((m) => ({
+        import("../pages/ForgotPasswordPage").then((m) => ({
           Component: m.default,
         })),
     },
     {
       path: "reset/:token",
       lazy: () =>
-        import("../pages/reset-password").then((m) => ({
+        import("../pages/ResetPasswordPage").then((m) => ({
           Component: m.default,
         })),
     },
     {
       path: "verify/:token",
       lazy: () =>
-        import("../pages/verify").then((m) => ({
+        import("../pages/EmailVerificationPage").then((m) => ({
           Component: m.default,
         })),
     },

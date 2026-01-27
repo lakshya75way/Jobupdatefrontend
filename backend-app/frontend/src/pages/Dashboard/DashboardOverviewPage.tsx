@@ -1,5 +1,5 @@
-import React, { useMemo } from "react";
-import { Row, Col, Statistic, Typography } from "antd";
+import React, { useMemo, useCallback } from "react";
+import { Row, Col, Statistic, Typography, Upload } from "antd";
 import {
   CheckCircleOutlined,
   ClockCircleOutlined,
@@ -8,17 +8,23 @@ import {
   InboxOutlined,
   CloudUploadOutlined,
 } from "@ant-design/icons";
-import { useJobs } from "../hooks/useJobs";
-import { useAuth } from "../hooks/useAuth";
-import { useFileUpload } from "../hooks/useFileUpload";
-import { Card, Loader, Button } from "../components";
-import { Upload, message } from "antd";
+import { useJobs } from "../../hooks/useJobs";
+import { useAuth } from "../../hooks/useAuth";
+import { useFileUpload } from "../../hooks/useFileUpload";
+import { Card, Button } from "../../components";
 import { useNavigate } from "react-router-dom";
+import { notificationService } from "../../services/notificationService";
 
 const { Title, Text } = Typography;
 const { Dragger } = Upload;
 
-const Homepage: React.FC = () => {
+interface UploadRequestProps {
+  file: File | Blob | string;
+  onSuccess?: (body: unknown, xhr?: XMLHttpRequest) => void;
+  onError?: (error: Error) => void;
+}
+
+const DashboardOverviewPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { jobs, loading } = useJobs(user?.role === "admin");
@@ -29,18 +35,35 @@ const Homepage: React.FC = () => {
       return { total: 0, completed: 0, processing: 0, failed: 0, pending: 0 };
     }
     const total = jobs.length;
-    const completed = jobs.filter((j) => j.status === "completed").length;
-    const processing = jobs.filter((j) => j.status === "processing").length;
-    const failed = jobs.filter((j) => j.status === "failed").length;
-    const pending = jobs.filter((j) => j.status === "pending").length;
+    const completed = jobs.filter((job) => job.status === "completed").length;
+    const processing = jobs.filter((job) => job.status === "processing").length;
+    const failed = jobs.filter((job) => job.status === "failed").length;
+    const pending = jobs.filter((job) => job.status === "pending").length;
     return { total, completed, processing, failed, pending };
   }, [jobs]);
 
-  if (loading && jobs.length === 0)
-    return <Loader fullscreen tip="Syncing with backend..." />;
+  const handleQuickUpload = useCallback(
+    async ({ file, onSuccess, onError }: UploadRequestProps) => {
+      try {
+        await uploadFiles([file as File]);
+        if (onSuccess) onSuccess("ok");
+        notificationService.message.success(
+          `${(file as File).name} upload started`,
+        );
+      } catch (error: unknown) {
+        if (onError) onError(error as Error);
+        notificationService.message.error(
+          `${(file as File).name} upload failed`,
+        );
+      }
+    },
+    [uploadFiles],
+  );
+
+  if (loading && jobs.length === 0) return null;
 
   return (
-    <div style={{ animation: "fadeIn 0.5s ease-out" }}>
+    <div className="page-transition">
       <div
         style={{
           marginBottom: 32,
@@ -140,16 +163,7 @@ const Homepage: React.FC = () => {
             <Dragger
               multiple
               showUploadList={false}
-              customRequest={async ({ file, onSuccess, onError }) => {
-                try {
-                  await uploadFiles([file as File]);
-                  if (onSuccess) onSuccess("ok");
-                  message.success(`${(file as File).name} upload started`);
-                } catch (err: unknown) {
-                  if (onError) onError(err as Error);
-                  message.error(`${(file as File).name} upload failed`);
-                }
-              }}
+              customRequest={handleQuickUpload}
               style={{ background: "#f8fafc", border: "2px dashed #e2e8f0" }}
             >
               <p className="ant-upload-drag-icon">
@@ -188,4 +202,4 @@ const Homepage: React.FC = () => {
     </div>
   );
 };
-export default Homepage;
+export default DashboardOverviewPage;

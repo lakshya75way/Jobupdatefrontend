@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Typography,
   Descriptions,
@@ -6,7 +6,7 @@ import {
   Col,
   Tag,
   Form,
-  Input,
+  Input as AntdInput,
   Switch,
   Space,
 } from "antd";
@@ -16,9 +16,9 @@ import {
   BellOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../hooks/useAuth";
-import { Card, Button } from "../components";
-import api from "../services/api";
-import { notificationService } from "../services/notification.service";
+import { Button, Card } from "../components";
+import api from "../services/apiClient";
+import { notificationService } from "../services/notificationService";
 
 const { Title, Text } = Typography;
 
@@ -27,28 +27,35 @@ interface ChangePasswordValues {
   newPassword: string;
 }
 
-const ProfilePage: React.FC = () => {
+interface PushState {
+  enabled: boolean;
+  loading: boolean;
+}
+
+const UserProfilePage: React.FC = () => {
   const { user } = useAuth();
   const [form] = Form.useForm();
-  const [loading, setLoading] = React.useState(false);
-  const [pushEnabled, setPushEnabled] = React.useState(false);
-  const [pushLoading, setPushLoading] = React.useState(true);
+  const [loading, setLoading] = useState(false);
+  const [permissionLoading, setPermissionLoading] = useState(false);
+  const [pushState, setPushState] = useState<PushState>({
+    enabled: false,
+    loading: true,
+  });
 
-  React.useEffect(() => {
+  useEffect(() => {
     const checkPushStatus = async () => {
       const status = await notificationService.getPushStatus();
-      setPushEnabled(status);
-      setPushLoading(false);
+      setPushState({ enabled: status, loading: false });
     };
     checkPushStatus();
   }, []);
 
-  const handlePushToggle = async (checked: boolean) => {
-    setPushLoading(true);
+  const handlePushToggle = useCallback(async (checked: boolean) => {
+    setPushState((prev) => ({ ...prev, loading: true }));
     if (checked) {
       const success = await notificationService.subscribeToPush();
       if (success) {
-        setPushEnabled(true);
+        setPushState({ enabled: true, loading: false });
         notificationService.message.success(
           "Background notifications enabled!",
         );
@@ -56,37 +63,81 @@ const ProfilePage: React.FC = () => {
         notificationService.message.error(
           "Failed to enable background notifications.",
         );
+        setPushState((prev) => ({ ...prev, loading: false }));
       }
     } else {
       const success = await notificationService.unsubscribeFromPush();
       if (success) {
-        setPushEnabled(false);
+        setPushState({ enabled: false, loading: false });
         notificationService.message.info("Background notifications disabled.");
+      } else {
+        setPushState((prev) => ({ ...prev, loading: false }));
       }
     }
-    setPushLoading(false);
-  };
+  }, []);
 
-  const onChangePassword = async (values: ChangePasswordValues) => {
-    setLoading(true);
-    try {
-      await api.post("/auth/change-password", values);
-      notificationService.message.success("Password changed successfully");
-      form.resetFields();
-    } catch (err: unknown) {
-      const errorMsg =
-        (err as { response?: { data?: { message?: string } } }).response?.data
-          ?.message || "Failed to change password";
-      notificationService.message.error(errorMsg);
-    } finally {
-      setLoading(false);
+  const onChangePassword = useCallback(
+    async (values: ChangePasswordValues) => {
+      setLoading(true);
+      try {
+        await api.post("/auth/change-password", values);
+        notificationService.message.success("Password changed successfully");
+        form.resetFields();
+      } catch (err: unknown) {
+        const errorMsg =
+          (err as { response?: { data?: { message?: string } } }).response?.data
+            ?.message || "Failed to change password";
+        notificationService.message.error(errorMsg);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [form],
+  );
+
+  const handleBrowserPermission = useCallback(async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      notificationService.message.error(
+        "Notifications are not supported in this browser",
+      );
+      return;
     }
-  };
+
+    setPermissionLoading(true);
+    try {
+      const perm = await notificationService.requestPermission();
+      if (perm === "granted") {
+        notificationService.message.success("Browser permission granted!");
+      } else if (perm === "denied") {
+        notificationService.message.error(
+          "Notifications blocked. To enable: Click the lock icon in your address bar → Site settings → Notifications → Allow",
+          8,
+        );
+      } else {
+        notificationService.message.warning("Permission request was dismissed");
+      }
+    } catch (error) {
+      console.error("Permission request error:", error);
+      notificationService.message.error(
+        "Failed to request permission. Please try again.",
+      );
+    } finally {
+      setPermissionLoading(false);
+    }
+  }, []);
+
+  const handleScheduleTest = useCallback(async () => {
+    try {
+      const res = await api.post("/auth/schedule-test-notification");
+      notificationService.message.success(res.data.message);
+    } catch (error: unknown) {
+      notificationService.message.error("Failed to schedule test.");
+    }
+  }, []);
 
   return (
-    <div style={{ animation: "fadeIn 0.5s ease-out" }}>
+    <div className="page-transition">
       <Row gutter={[24, 24]}>
-        {/* Profile Card */}
         <Col xs={24} md={12}>
           <Card
             title={
@@ -107,7 +158,6 @@ const ProfilePage: React.FC = () => {
           </Card>
         </Col>
 
-        {/* Security Card */}
         <Col xs={24} md={12}>
           <Card
             title={
@@ -126,7 +176,7 @@ const ProfilePage: React.FC = () => {
                 label="Current Password"
                 rules={[{ required: true, message: "Required" }]}
               >
-                <Input.Password />
+                <AntdInput.Password />
               </Form.Item>
               <Form.Item
                 name="newPassword"
@@ -136,7 +186,7 @@ const ProfilePage: React.FC = () => {
                   { min: 8, message: "Min 8 chars" },
                 ]}
               >
-                <Input.Password />
+                <AntdInput.Password />
               </Form.Item>
               <Form.Item>
                 <Button
@@ -152,7 +202,6 @@ const ProfilePage: React.FC = () => {
           </Card>
         </Col>
 
-        {/* System & Push Card */}
         <Col xs={24}>
           <Card
             title={
@@ -177,17 +226,11 @@ const ProfilePage: React.FC = () => {
                 <Space wrap>
                   <Button
                     type="default"
-                    onClick={async () => {
-                      const perm =
-                        await notificationService.requestPermission();
-                      if (perm === "granted") {
-                        notificationService.message.success(
-                          "Browser permission granted!",
-                        );
-                      }
-                    }}
+                    onClick={handleBrowserPermission}
+                    loading={permissionLoading}
                     disabled={
-                      notificationService.getPermissionStatus() === "granted"
+                      notificationService.getPermissionStatus() === "granted" ||
+                      permissionLoading
                     }
                   >
                     {notificationService.getPermissionStatus() === "granted"
@@ -199,7 +242,7 @@ const ProfilePage: React.FC = () => {
                       type="link"
                       onClick={() => notificationService.testNotification()}
                     >
-                      Test Bell 🔔
+                      Test Bell
                     </Button>
                   )}
                 </Space>
@@ -234,8 +277,8 @@ const ProfilePage: React.FC = () => {
                       </Text>
                     </div>
                     <Switch
-                      loading={pushLoading}
-                      checked={pushEnabled}
+                      loading={pushState.loading}
+                      checked={pushState.enabled}
                       onChange={handlePushToggle}
                       disabled={
                         notificationService.getPermissionStatus() !== "granted"
@@ -254,26 +297,15 @@ const ProfilePage: React.FC = () => {
                       * Please grant browser permission first.
                     </Text>
                   )}
-                  {pushEnabled && (
+                  {pushState.enabled && (
                     <Button
                       type="primary"
                       ghost
                       size="small"
                       style={{ marginTop: 16, borderRadius: 8 }}
-                      onClick={async () => {
-                        try {
-                          const res = await api.post(
-                            "/auth/schedule-test-notification",
-                          );
-                          notificationService.message.success(res.data.message);
-                        } catch (err) {
-                          notificationService.message.error(
-                            "Failed to schedule test.",
-                          );
-                        }
-                      }}
+                      onClick={handleScheduleTest}
                     >
-                      Delayed Test (10s) 🕒
+                      Delayed Test (10s)
                     </Button>
                   )}
                 </div>
@@ -286,4 +318,4 @@ const ProfilePage: React.FC = () => {
   );
 };
 
-export default ProfilePage;
+export default UserProfilePage;

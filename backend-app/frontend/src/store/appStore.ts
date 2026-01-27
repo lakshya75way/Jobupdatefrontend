@@ -2,11 +2,13 @@ import { configureStore } from "@reduxjs/toolkit";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 import authReducer from "./slices/authSlice";
 import uploadReducer from "./slices/uploadSlice";
+import jobReducer from "./slices/jobSlice";
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     upload: uploadReducer,
+    jobs: jobReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

@@ -1,4 +1,4 @@
-import { useAppDispatch, useAppSelector } from "../store";
+import { useAppSelector, useAppDispatch } from "../store/appStore";
 import {
   logout,
   setAuth,

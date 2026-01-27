@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Layout,
   Menu,
@@ -24,14 +24,14 @@ import {
 } from "@ant-design/icons";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { Button, Avatar } from "../components";
+import { Button, Avatar, ErrorBoundary } from "../components";
 import UploadTray from "../components/UploadTray/UploadTray";
 import NotificationBanner from "../components/NotificationBanner/NotificationBanner";
-import styles from "./Authenticated.module.css";
+import styles from "./AuthenticatedLayout.module.css";
 const { Header, Content, Sider } = Layout;
 const { Title, Text } = Typography;
 const { useBreakpoint } = Grid;
-const Authenticated: React.FC = () => {
+const AuthenticatedLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const screens = useBreakpoint();
@@ -45,56 +45,66 @@ const Authenticated: React.FC = () => {
       navigate("/login");
     }
   }, [isAuthenticated, navigate]);
-  if (!isAuthenticated) return null;
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
-  const menuItems: MenuProps["items"] = [
-    {
-      key: "/dashboard",
-      icon: <PieChartOutlined />,
-      label: "Dashboard",
-    },
-    {
-      key: "/dashboard/jobs",
-      icon: <DesktopOutlined />,
-      label: "Job Monitor",
-    },
-    {
-      key: "/dashboard/uploads",
-      icon: <CloudUploadOutlined />,
-      label: "My Uploads",
-    },
-    {
-      key: "api-docs",
-      icon: <FileTextOutlined />,
-      label: "API Documentation",
-    },
-  ];
-  const userMenuItems: MenuProps["items"] = [
-    {
-      key: "profile",
-      icon: <UserOutlined />,
-      label: "My Profile",
-      onClick: () => navigate("/dashboard/profile"),
-    },
-    {
-      key: "settings",
-      icon: <SettingOutlined />,
-      label: "Account Settings",
-    },
-    {
-      type: "divider",
-    },
-    {
-      key: "logout",
-      icon: <LogoutOutlined />,
-      label: "Sign Out",
-      danger: true,
-      onClick: handleLogout,
-    },
-  ];
+
+  const menuItems: MenuProps["items"] = useMemo(
+    () => [
+      {
+        key: "/dashboard",
+        icon: <PieChartOutlined />,
+        label: "Dashboard",
+      },
+      {
+        key: "/dashboard/jobs",
+        icon: <DesktopOutlined />,
+        label: "Job Monitor",
+      },
+      {
+        key: "/dashboard/uploads",
+        icon: <CloudUploadOutlined />,
+        label: "My Uploads",
+      },
+      {
+        key: "api-docs",
+        icon: <FileTextOutlined />,
+        label: "API Documentation",
+      },
+    ],
+    [],
+  );
+
+  const userMenuItems: MenuProps["items"] = useMemo(
+    () => [
+      {
+        key: "profile",
+        icon: <UserOutlined />,
+        label: "My Profile",
+        onClick: () => navigate("/dashboard/profile"),
+      },
+      {
+        key: "settings",
+        icon: <SettingOutlined />,
+        label: "Account Settings",
+      },
+      {
+        type: "divider",
+      },
+      {
+        key: "logout",
+        icon: <LogoutOutlined />,
+        label: "Sign Out",
+        danger: true,
+        onClick: handleLogout,
+      },
+    ],
+    [handleLogout, navigate],
+  );
+
+  if (!isAuthenticated) return null;
+
   const SidebarContent = (
     <>
       <div className={styles.logoWrapper}>
@@ -214,7 +224,9 @@ const Authenticated: React.FC = () => {
         <Content className={styles.content}>
           <div className={styles.contentInner}>
             <NotificationBanner />
-            <Outlet />
+            <ErrorBoundary>
+              <Outlet />
+            </ErrorBoundary>
           </div>
         </Content>
       </Layout>
@@ -222,4 +234,4 @@ const Authenticated: React.FC = () => {
     </Layout>
   );
 };
-export default Authenticated;
+export default AuthenticatedLayout;

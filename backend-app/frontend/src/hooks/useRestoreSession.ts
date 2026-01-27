@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useAppDispatch } from "../store";
+import { useAppDispatch } from "../store/appStore";
 import { setUser, setLoading } from "../store/slices/authSlice";
 import { jwtDecode } from "jwt-decode";
 interface JwtPayload {

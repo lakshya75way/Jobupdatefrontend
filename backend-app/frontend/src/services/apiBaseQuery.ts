@@ -1,5 +1,5 @@
 import { AxiosRequestConfig, AxiosError } from "axios";
-import api from "./api";
+import api from "./apiClient";
 export const baseQuery = async (args: string | AxiosRequestConfig) => {
   try {
     const config = typeof args === "string" ? { url: args } : args;

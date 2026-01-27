@@ -4,7 +4,7 @@ import {
   CloseCircleFilled,
   InfoCircleFilled,
 } from "@ant-design/icons";
-import api from "./api";
+import api from "./apiClient";
 import {
   AntdStaticInstances,
   NotificationOptions,
@@ -44,15 +44,12 @@ class NotificationService {
           scope: "/",
         });
         this.swRegistration = registration;
-      } catch (err) {
-        // Silent fail - SW registration is optional
+      } catch (error) {
+        console.error("Service Worker registration failed:", error);
       }
     }
   }
 
-  /**
-   * Helper to convert VAPID key
-   */
   private urlBase64ToUint8Array(base64String: string) {
     const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
     const base64 = (base64String + padding)
@@ -68,9 +65,6 @@ class NotificationService {
     return outputArray;
   }
 
-  /**
-   * Subscribe user to Background Push Notifications
-   */
   public async subscribeToPush(): Promise<boolean> {
     if (!this.swRegistration) {
       return false;
@@ -87,17 +81,14 @@ class NotificationService {
         applicationServerKey: this.urlBase64ToUint8Array(publicVapidKey),
       });
 
-      // Save to backend
       await api.post("/auth/push-subscription", subscription);
       return true;
-    } catch (err) {
+    } catch (error) {
+      console.error("Push subscription failed:", error);
       return false;
     }
   }
 
-  /**
-   * Unsubscribe from Push
-   */
   public async unsubscribeFromPush(): Promise<boolean> {
     if (!this.swRegistration) return false;
 
@@ -111,14 +102,12 @@ class NotificationService {
         });
       }
       return true;
-    } catch (err) {
+    } catch (error) {
+      console.error("Push unsubscription failed:", error);
       return false;
     }
   }
 
-  /**
-   * Get current Push status
-   */
   public async getPushStatus(): Promise<boolean> {
     if (!this.swRegistration) return false;
     const subscription =
@@ -126,9 +115,6 @@ class NotificationService {
     return !!subscription;
   }
 
-  /**
-   * Get current permission status
-   */
   public getPermissionStatus(): NotificationPermission {
     if (typeof window === "undefined" || !("Notification" in window)) {
       return "denied";
@@ -136,18 +122,28 @@ class NotificationService {
     return Notification.permission;
   }
 
-  /**
-   * Request browser notification permission
-   */
   public async requestPermission(): Promise<NotificationPermission> {
     if (typeof window === "undefined" || !("Notification" in window)) {
+      console.warn("Notifications not supported");
       return "denied";
     }
 
-    const permission = await Notification.requestPermission();
-    if (permission === "granted") {
+    console.log("Current permission status:", Notification.permission);
+
+    if (Notification.permission !== "default") {
+      console.log("Permission already decided:", Notification.permission);
+      return Notification.permission;
     }
-    return permission;
+
+    try {
+      console.log("Requesting notification permission...");
+      const permission = await Notification.requestPermission();
+      console.log("Notification permission result:", permission);
+      return permission;
+    } catch (error) {
+      console.error("Error requesting notification permission:", error);
+      return "denied";
+    }
   }
 
   private notificationTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -156,9 +152,6 @@ class NotificationService {
     error: [],
   };
 
-  /**
-   * Debounced notification for batching multiple file events
-   */
   private debouncedNotify() {
     if (this.notificationTimeout) {
       clearTimeout(this.notificationTimeout);
@@ -188,15 +181,11 @@ class NotificationService {
         this.executeNotify({ title, message, type: "error" });
       }
 
-      // Reset batch
       this.pendingBatch = { success: [], error: [] };
       this.notificationTimeout = null;
-    }, 1000); // 1-second debounce window
+    }, 1000);
   }
 
-  /**
-   * Show a hybrid notification (In-app + Browser)
-   */
   private executeNotify(options: NotificationOptions) {
     const { title, message, type = "info", onClick, duration = 4.5 } = options;
     if (document.visibilityState === "visible") {
@@ -224,7 +213,6 @@ class NotificationService {
     };
 
     const config = {
-      // @ts-ignore
       title: title,
       description: message,
       placement: "bottomRight" as const,
@@ -266,34 +254,28 @@ class NotificationService {
           tag: `upload-${Date.now()}`,
         };
 
-        const n = new Notification(title, options);
+        const browserNotification = new Notification(title, options);
 
-        n.onclick = (e) => {
-          e.preventDefault();
+        browserNotification.onclick = (event) => {
+          event.preventDefault();
           window.focus();
           if (onClick) onClick();
-          n.close();
+          browserNotification.close();
         };
-      } catch (err) {
-        // Silent fail - notification is best-effort
+      } catch (error) {
+        console.error("Browser notification failed:", error);
       }
     }
   }
 
-  /**
-   * Trigger a test notification to verify OS-level alerts
-   */
   public testNotification() {
     this.notify({
-      title: "Test Notification 🔔",
+      title: "Test Notification",
       message: "Notification system is now debounced and spam-free!",
       type: "success",
     });
   }
 
-  /**
-   * Success notification helper
-   */
   public success(
     title: string,
     message: string,
@@ -308,9 +290,6 @@ class NotificationService {
     }
   }
 
-  /**
-   * Error notification helper
-   */
   public error(
     title: string,
     message: string,

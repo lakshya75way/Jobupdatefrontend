@@ -1,8 +1,6 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Table,
-  Button,
-  Space,
   Typography,
   Card,
   message,
@@ -10,18 +8,13 @@ import {
   Empty,
   Input,
   Modal,
-  Tag,
 } from "antd";
-import type { ColumnsType } from "antd/es/table";
 import {
   InboxOutlined,
   CloudUploadOutlined,
-  FileOutlined,
-  DownloadOutlined,
-  DeleteOutlined,
   SearchOutlined,
-  EyeOutlined,
   ExclamationCircleOutlined,
+  FileOutlined,
 } from "@ant-design/icons";
 import { useFileUpload } from "../../hooks/useFileUpload";
 import {
@@ -29,34 +22,15 @@ import {
   deleteFileApi,
   downloadFile,
   openFile,
-} from "../../services/upload.service";
+} from "../../services/fileUploadService";
 import { UserFile } from "../../types/upload";
-import styles from "./UploadsPage.module.css";
-
+import { useFileTableColumns } from "./useFileTableColumns";
+import { SUPPORTED_PREVIEW_TYPES, BACKGROUND_SYNC_INTERVAL } from "./constants";
 import FileSearchPicker from "../../components/FileSearchPicker/FileSearchPicker";
+import styles from "./UploadsPage.module.css";
 
 const { Title, Text } = Typography;
 const { Dragger } = Upload;
-
-const SUPPORTED_PREVIEW_TYPES = [
-  "application/pdf",
-  "image/jpeg",
-  "image/png",
-  "image/gif",
-  "image/svg+xml",
-  "image/webp",
-  "text/plain",
-  "text/html",
-  "text/css",
-  "application/json",
-  "text/javascript",
-  "audio/mpeg",
-  "audio/wav",
-  "audio/ogg",
-  "video/mp4",
-  "video/webm",
-  "video/ogg",
-];
 
 const UploadsPage: React.FC = () => {
   const [files, setFiles] = useState<UserFile[]>([]);
@@ -66,22 +40,24 @@ const UploadsPage: React.FC = () => {
   const [modalApi, modalContextHolder] = Modal.useModal();
   const { uploadFiles } = useFileUpload();
 
-  const fetchFiles = async (search?: string, silent: boolean = false) => {
-    if (!silent) setLoading(true);
-    try {
-      const response = await getMyFilesApi(search);
-      setFiles(response.data.data);
-    } catch (error) {
-      if (!silent) {
-        messageApi.error("Failed to fetch files");
+  const fetchFiles = useCallback(
+    async (search?: string, silent: boolean = false) => {
+      if (!silent) setLoading(true);
+      try {
+        const response = await getMyFilesApi(search);
+        setFiles(response.data.data);
+      } catch (error) {
+        if (!silent) {
+          messageApi.error("Failed to fetch files");
+        }
+        console.error("Background sync failed:", error);
+      } finally {
+        if (!silent) setLoading(false);
       }
-      console.error("Background sync failed:", error);
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  };
+    },
+    [messageApi],
+  );
 
-  // Filter files based on search query
   const filteredFiles = useMemo(() => {
     if (!searchQuery.trim()) {
       return files;
@@ -93,136 +69,84 @@ const UploadsPage: React.FC = () => {
   }, [files, searchQuery]);
 
   useEffect(() => {
-    fetchFiles(searchQuery, false); // Initial load with loader
-    const interval = setInterval(() => fetchFiles(searchQuery, true), 15000); // Silent background sync
-    return () => clearInterval(interval);
-  }, [searchQuery]);
-
-  const handleDelete = async (id: string) => {
-    modalApi.confirm({
-      title: "Delete File",
-      icon: <ExclamationCircleOutlined />,
-      content:
-        "Are you sure you want to delete this file? This action cannot be undone.",
-      okText: "Yes, Delete",
-      okType: "danger",
-      cancelText: "Cancel",
-      onOk: async () => {
-        try {
-          await deleteFileApi(id);
-          messageApi.success("File deleted successfully");
-          fetchFiles(searchQuery, true);
-        } catch (error) {
-          messageApi.error("Failed to delete file");
-        }
-      },
-    });
-  };
-
-  const handleDownload = async (id: string, name: string) => {
-    try {
-      await downloadFile(id, name);
-    } catch (error) {
-      messageApi.error("Failed to download file");
-    }
-  };
-
-  const handleOpen = async (record: UserFile) => {
-    const isSupported = SUPPORTED_PREVIEW_TYPES.some(
-      (type) => record.mimeType.startsWith(type) || record.mimeType === type,
+    fetchFiles(searchQuery, false);
+    const syncInterval = setInterval(
+      () => fetchFiles(searchQuery, true),
+      BACKGROUND_SYNC_INTERVAL,
     );
+    return () => clearInterval(syncInterval);
+  }, [searchQuery, fetchFiles]);
 
-    if (!isSupported) {
+  const handleDelete = useCallback(
+    async (id: string) => {
       modalApi.confirm({
-        title: "Preview Not Supported",
-        icon: <FileOutlined />,
-        content: `The file format (${record.mimeType}) cannot be previewed directly in the browser. Would you like to download it instead?`,
-        okText: "Download Now",
+        title: "Delete File",
+        icon: <ExclamationCircleOutlined />,
+        content:
+          "Are you sure you want to delete this file? This action cannot be undone.",
+        okText: "Yes, Delete",
+        okType: "danger",
         cancelText: "Cancel",
-        onOk: () => handleDownload(record._id, record.originalName),
+        onOk: async () => {
+          try {
+            await deleteFileApi(id);
+            messageApi.success("File deleted successfully");
+            fetchFiles(searchQuery, true);
+          } catch (error) {
+            messageApi.error("Failed to delete file");
+          }
+        },
       });
-      return;
-    }
+    },
+    [modalApi, messageApi, searchQuery, fetchFiles],
+  );
 
-    try {
-      await openFile(record._id);
-    } catch (error: unknown) {
-      messageApi.error("Failed to open file");
-    }
-  };
+  const handleDownload = useCallback(
+    async (id: string, name: string) => {
+      try {
+        await downloadFile(id, name);
+      } catch (error) {
+        messageApi.error("Failed to download file");
+      }
+    },
+    [messageApi],
+  );
 
-  const columns: ColumnsType<UserFile> = [
-    {
-      title: "Name",
-      dataIndex: "originalName",
-      key: "name",
-      render: (text: string, record: UserFile) => (
-        <Space onClick={() => handleOpen(record)} style={{ cursor: "pointer" }}>
-          <FileOutlined style={{ color: "#3b82f6" }} />
-          <Text strong className={styles.itemNameTable}>
-            {text}
-          </Text>
-        </Space>
-      ),
+  const handleOpen = useCallback(
+    async (record: UserFile) => {
+      const isSupported = SUPPORTED_PREVIEW_TYPES.some(
+        (type) => record.mimeType.startsWith(type) || record.mimeType === type,
+      );
+
+      if (!isSupported) {
+        modalApi.confirm({
+          title: "Preview Not Supported",
+          icon: <FileOutlined />,
+          content: `The file format (${record.mimeType}) cannot be previewed directly in the browser. Would you like to download it instead?`,
+          okText: "Download Now",
+          cancelText: "Cancel",
+          onOk: () => handleDownload(record._id, record.originalName),
+        });
+        return;
+      }
+
+      try {
+        await openFile(record._id);
+      } catch (error: unknown) {
+        messageApi.error("Failed to open file");
+      }
     },
-    {
-      title: "Type",
-      dataIndex: "mimeType",
-      key: "type",
-      render: (text: string) => <Tag color="blue">{text}</Tag>,
-      responsive: ["md"],
-    },
-    {
-      title: "Size",
-      dataIndex: "size",
-      key: "size",
-      render: (size: number) => {
-        const kb = size / 1024;
-        const mb = kb / 1024;
-        return mb > 1 ? `${mb.toFixed(2)} MB` : `${kb.toFixed(2)} KB`;
-      },
-      responsive: ["sm"],
-    },
-    {
-      title: "Uploaded At",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (date: string) => new Date(date).toLocaleString(),
-      responsive: ["lg"],
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      fixed: "right",
-      width: 150,
-      render: (_: unknown, record: UserFile) => (
-        <Space size="small">
-          <Button
-            type="text"
-            icon={<EyeOutlined />}
-            onClick={() => handleOpen(record)}
-            title="Open"
-          />
-          <Button
-            type="text"
-            icon={<DownloadOutlined />}
-            onClick={() => handleDownload(record._id, record.originalName)}
-            title="Download"
-          />
-          <Button
-            type="text"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record._id)}
-            title="Delete"
-          />
-        </Space>
-      ),
-    },
-  ];
+    [modalApi, handleDownload, messageApi],
+  );
+
+  const columns = useFileTableColumns({
+    onOpen: handleOpen,
+    onDownload: handleDownload,
+    onDelete: handleDelete,
+  });
 
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} page-transition`}>
       {messageContextHolder}
       {modalContextHolder}
       <div className={styles.header}>
@@ -245,7 +169,7 @@ const UploadsPage: React.FC = () => {
             onInputChange={(value) => {
               setSearchQuery(value);
             }}
-            autoOpenFile={false} // We handle opening ourselves for preview logic
+            autoOpenFile={false}
           />
         </div>
 
@@ -260,9 +184,9 @@ const UploadsPage: React.FC = () => {
               try {
                 await uploadFiles([file as File]);
                 if (onSuccess) onSuccess("ok");
-                fetchFiles(searchQuery, true); // Silent refresh after upload
-              } catch (err: unknown) {
-                if (onError) onError(err as Error);
+                fetchFiles(searchQuery, true);
+              } catch (error: unknown) {
+                if (onError) onError(error as Error);
               }
             }}
             className={styles.dragger}
@@ -283,23 +207,33 @@ const UploadsPage: React.FC = () => {
         <Card className={styles.tableCard}>
           <div className={styles.tableHeader}>
             <Title level={4}>Recent Files</Title>
-            <Space className={styles.headerActions}>
+            <div className={styles.tableHeaderActions}>
               <Input
                 placeholder="Filter files..."
                 prefix={<SearchOutlined />}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(event) => setSearchQuery(event.target.value)}
                 style={{ width: 250 }}
                 allowClear
               />
-              <Button
-                icon={<CloudUploadOutlined />}
+              <button
                 onClick={() => fetchFiles()}
-                loading={loading}
+                disabled={loading}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "4px 15px",
+                  border: "1px solid #d9d9d9",
+                  borderRadius: "6px",
+                  background: "#fff",
+                  cursor: loading ? "not-allowed" : "pointer",
+                }}
               >
+                <CloudUploadOutlined />
                 Refresh
-              </Button>
-            </Space>
+              </button>
+            </div>
           </div>
           <Table
             dataSource={filteredFiles}

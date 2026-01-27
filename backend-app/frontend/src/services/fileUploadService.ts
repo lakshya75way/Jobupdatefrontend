@@ -1,9 +1,11 @@
-import api from "./api";
+import api from "./apiClient";
 import { AxiosProgressEvent } from "axios";
+import { env } from "../config/env.config";
 
 export const uploadFileApi = (
   file: File,
   onProgress: (progress: number) => void,
+  signal?: AbortSignal,
 ) => {
   const formData = new FormData();
   formData.append("file", file);
@@ -12,6 +14,7 @@ export const uploadFileApi = (
     headers: {
       "Content-Type": "multipart/form-data",
     },
+    signal,
     onUploadProgress: (progressEvent: AxiosProgressEvent) => {
       const progress = progressEvent.total
         ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
@@ -32,7 +35,7 @@ export const deleteFileApi = (id: string) => {
 };
 
 export const downloadFileUrl = (id: string) => {
-  return `${import.meta.env.VITE_API_URL}/uploads/download/${id}`;
+  return `${env.VITE_API_URL}/uploads/download/${id}`;
 };
 
 export const downloadFile = async (id: string, name: string) => {

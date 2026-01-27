@@ -5,7 +5,7 @@
   --primary-light: #eef2ff;
   --secondary: #0ea5e9;
   --secondary-hover: #0284c7;
-  --accent: #f43f5e; 
+  --accent: #f43f5e;
   --background: #f8fafc;
   --foreground: #0f172a;
   --surface: #ffffff;
@@ -101,4 +101,33 @@ input {
   .container {
     padding: 0 var(--spacing-md);
   }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.page-transition {
+  animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.slide-transition {
+  animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }

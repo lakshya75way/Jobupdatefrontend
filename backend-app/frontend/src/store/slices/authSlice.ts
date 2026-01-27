@@ -1,12 +1,17 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AuthState, User } from "../../types/auth";
+import { storageService, StorageKey } from "../../services/storage.service";
+
+const token = storageService.getAccessToken();
+
 const initialState: AuthState = {
   user: null,
-  token: localStorage.getItem("accessToken"),
-  isAuthenticated: !!localStorage.getItem("accessToken"),
+  token: token,
+  isAuthenticated: !!token,
   loading: false,
   error: null,
 };
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -31,8 +36,11 @@ const authSlice = createSlice({
       state.isAuthenticated = true;
       state.loading = false;
       state.error = null;
-      localStorage.setItem("accessToken", action.payload.token);
-      localStorage.setItem("refreshToken", action.payload.refreshToken);
+      storageService.setItem(StorageKey.ACCESS_TOKEN, action.payload.token);
+      storageService.setItem(
+        StorageKey.REFRESH_TOKEN,
+        action.payload.refreshToken,
+      );
     },
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
@@ -44,11 +52,11 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.loading = false;
       state.error = null;
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
+      storageService.clear();
     },
   },
 });
+
 export const { setLoading, setUser, setAuth, setError, logout } =
   authSlice.actions;
 export default authSlice.reducer;

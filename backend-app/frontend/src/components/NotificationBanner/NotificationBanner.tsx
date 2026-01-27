@@ -1,43 +1,21 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Alert, Button, Space } from "antd";
 import { BellOutlined, CloseOutlined } from "@ant-design/icons";
-import { notificationService } from "../../services/notification.service";
+import { notificationService } from "../../services/notificationService";
+import { useNotificationPermission } from "../../hooks/useNotificationPermission";
 
 const NotificationBanner: React.FC = () => {
-  const [show, setShow] = useState(false);
-
-  useEffect(() => {
-    const checkPermission = () => {
-      if (typeof window !== "undefined" && "Notification" in window) {
-        if (Notification.permission === "default") {
-          setShow(true);
-        } else {
-          setShow(false);
-        }
-      }
-    };
-
-    setTimeout(checkPermission, 1000);
-
-    const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
-        checkPermission();
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibility);
-    return () =>
-      document.removeEventListener("visibilitychange", handleVisibility);
-  }, []);
+  const shouldShow = useNotificationPermission();
+  const [dismissed, setDismissed] = useState(false);
 
   const handleEnable = async () => {
     const perm = await notificationService.requestPermission();
     if (perm !== "default") {
-      setShow(false);
+      setDismissed(true);
     }
   };
 
-  if (!show) return null;
+  if (!shouldShow || dismissed) return null;
 
   return (
     <div
@@ -88,7 +66,7 @@ const NotificationBanner: React.FC = () => {
               size="small"
               type="text"
               icon={<CloseOutlined />}
-              onClick={() => setShow(false)}
+              onClick={() => setDismissed(true)}
             />
           </Space>
         }

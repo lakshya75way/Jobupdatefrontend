@@ -9,3 +9,4 @@ export { default as Table } from "./Table/Table";
 export { default as Select } from "./Select/Select";
 export { default as Avatar } from "./Avatar/Avatar";
 export { default as UploadTray } from "./UploadTray/UploadTray";
+export { default as ErrorBoundary } from "./ErrorBoundary/ErrorBoundary";

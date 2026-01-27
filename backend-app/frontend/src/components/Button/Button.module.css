@@ -57,6 +57,10 @@
 .outline:hover {
   background-color: var(--surface-hover);
 }
+.var{
+  background-color: var(--danger-hover);
+  color: white;   
+}
 .sm {
   height: 2.25rem;
   padding: 0 0.75rem;

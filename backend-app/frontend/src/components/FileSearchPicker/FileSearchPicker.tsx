@@ -1,8 +1,8 @@
-import React from "react";
+import React, { memo, useCallback, useRef } from "react";
 import AsyncSelect from "react-select/async";
-import { getMyFilesApi, openFile } from "../../services/upload.service";
+import { getMyFilesApi, openFile } from "../../services/fileUploadService";
 import { UserFile } from "../../types/upload";
-import { message } from "antd";
+import { notificationService } from "../../services/notificationService";
 import { FileOutlined } from "@ant-design/icons";
 
 interface FileOption {
@@ -22,56 +22,68 @@ const FileSearchPicker: React.FC<FileSearchPickerProps> = ({
   onInputChange,
   autoOpenFile = true,
 }) => {
-  
-  let timeoutId: ReturnType<typeof setTimeout>;
+  const timeoutId = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const loadOptions = (
-    inputValue: string,
-    callback: (options: FileOption[]) => void,
-  ) => {
-    if (timeoutId) clearTimeout(timeoutId);
+  const loadOptions = useCallback(
+    (inputValue: string, callback: (options: FileOption[]) => void) => {
+      if (timeoutId.current) clearTimeout(timeoutId.current);
 
-    timeoutId = setTimeout(async () => {
-      try {
-        const response = await getMyFilesApi(inputValue);
-        const files: UserFile[] = response.data.data;
+      timeoutId.current = setTimeout(async () => {
+        try {
+          const response = await getMyFilesApi(inputValue);
+          const files: UserFile[] = response.data.data;
 
-        const options = files.map((file) => ({
-          value: file._id,
-          label: file.originalName,
-          file: file,
-        }));
+          const options = files.map((file) => ({
+            value: file._id,
+            label: file.originalName,
+            file: file,
+          }));
 
-        callback(options);
-      } catch (error: unknown) {
-        console.error("Error fetching files:", error);
-        callback([]);
+          callback(options);
+        } catch (error: unknown) {
+          console.error("Error fetching files:", error);
+          callback([]);
+        }
+      }, 500);
+    },
+    [],
+  );
+
+  const handleChange = useCallback(
+    (option: FileOption | null) => {
+      if (option) {
+        if (onSelect) {
+          onSelect(option.file);
+        }
+
+        if (autoOpenFile) {
+          openFile(option.value).catch(() => {
+            notificationService.message.error("Failed to open file");
+          });
+        }
       }
-    }, 500);
-  };
+    },
+    [onSelect, autoOpenFile],
+  );
 
-  const handleChange = (option: FileOption | null) => {
-    if (option) {
-      
-      if (onSelect) {
-        onSelect(option.file);
+  const handleInputChange = useCallback(
+    (value: string) => {
+      if (onInputChange) {
+        onInputChange(value);
       }
+      return value;
+    },
+    [onInputChange],
+  );
 
-      
-      if (autoOpenFile) {
-        openFile(option.value).catch(() => {
-          message.error("Failed to open file");
-        });
-      }
-    }
-  };
-
-  const handleInputChange = (value: string) => {
-    if (onInputChange) {
-      onInputChange(value);
-    }
-    return value;
-  };
+  const DropdownIndicator = useCallback(
+    () => (
+      <div style={{ padding: "0 8px", color: "#94a3b8" }}>
+        <FileOutlined />
+      </div>
+    ),
+    [],
+  );
 
   return (
     <div style={{ width: "100%", maxWidth: "400px", margin: "10px 0" }}>
@@ -84,11 +96,7 @@ const FileSearchPicker: React.FC<FileSearchPickerProps> = ({
         placeholder="Search for a file..."
         isClearable
         components={{
-          DropdownIndicator: () => (
-            <div style={{ padding: "0 8px", color: "#94a3b8" }}>
-              <FileOutlined />
-            </div>
-          ),
+          DropdownIndicator,
         }}
         styles={{
           control: (base) => ({
@@ -126,4 +134,4 @@ const FileSearchPicker: React.FC<FileSearchPickerProps> = ({
   );
 };
 
-export default FileSearchPicker;
+export default memo(FileSearchPicker);

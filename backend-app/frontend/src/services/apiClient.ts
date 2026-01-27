@@ -1,15 +1,19 @@
 import axios from "axios";
-import { store } from "../store";
+import { store } from "../store/appStore";
 import { logout } from "../store/slices/authSlice";
+import { env } from "../config/env.config";
+import { socketClient } from "./socketClient";
+import { storageService, StorageKey } from "./storage.service";
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000/api",
+  baseURL: env.VITE_API_URL,
   headers: {
     "Content-Type": "application/json",
   },
 });
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("accessToken");
+    const token = storageService.getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -29,16 +33,17 @@ api.interceptors.response.use(
       }
       originalRequest._retry = true;
       try {
-        const refreshToken = localStorage.getItem("refreshToken");
+        const refreshToken = storageService.getRefreshToken();
         if (!refreshToken) {
           throw new Error("No refresh token");
         }
         const response = await axios.post<{ accessToken: string }>(
-          `${import.meta.env.VITE_API_URL || "http://localhost:3000/api"}/auth/refresh-token`,
+          `${env.VITE_API_URL}/auth/refresh-token`,
           { refreshToken },
         );
         const { accessToken } = response.data;
-        localStorage.setItem("accessToken", accessToken);
+        storageService.setItem(StorageKey.ACCESS_TOKEN, accessToken);
+        socketClient.refreshAuth();
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return api(originalRequest);
       } catch (refreshError: unknown) {

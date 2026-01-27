@@ -181,3 +181,4 @@ export const validationSchemas = {
   },
 };
 export default validationSchemas;
+export * as yup from "yup";

@@ -10,10 +10,7 @@ export default defineConfig({
       srcDir: "src",
       filename: "service-worker.ts",
       strategies: "injectManifest",
-      injectManifest: {
-        swDest: "dist/sw.js", // This ensures the output is always sw.js
-      },
-      injectRegister: false, // We'll register it manually for more control
+      injectRegister: false,
       manifest: {
         name: "Job Scheduler",
         short_name: "JobApp",

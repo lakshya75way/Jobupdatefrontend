@@ -1,37 +1,35 @@
 import React, { useState } from "react";
-import { Form, Typography, message } from "antd";
-import { LockOutlined } from "@ant-design/icons";
 import { useNavigate, useParams } from "react-router-dom";
-import api from "../services/api";
-import styles from "./login.module.css";
+import { Form, Typography, App } from "antd";
+import { LockOutlined } from "@ant-design/icons";
+import api from "../services/apiClient";
+import styles from "./LoginPage.module.css";
 import { Button, Input } from "../components";
-import { AxiosError } from "axios";
+
 const { Title, Text } = Typography;
-interface ResetPasswordFormValues {
-  password: string;
-  confirm: string;
-}
+
 const ResetPasswordPage: React.FC = () => {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { token } = useParams<{ token: string }>();
+  const { message } = App.useApp();
+  const { token } = useParams();
   const navigate = useNavigate();
-  const onFinish = async (values: ResetPasswordFormValues) => {
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const onFinish = async (values: { password: string }) => {
     if (!token) {
-      message.error("Invalid or missing token.");
+      message.error("Invalid or expired token.");
       return;
     }
     setIsLoading(true);
     try {
-      await api.post(`/auth/reset/${token}`, {
-        password: values.password,
+      await api.post("/auth/reset-password", {
+        token,
+        newPassword: values.password,
       });
-      message.success("Password reset successful! Please login.");
+      message.success("Password reset successful! Please log in.");
       navigate("/login");
-    } catch (err: unknown) {
-      const error = err as AxiosError<{ message?: string }>;
-      message.error(
-        error.response?.data?.message || "Failed to reset password.",
-      );
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      message.error(err.response?.data?.message || "Something went wrong");
     } finally {
       setIsLoading(false);
     }
