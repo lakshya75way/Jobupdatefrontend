@@ -18,7 +18,6 @@ if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR);
 }
 
-
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
     cb(null, UPLOAD_DIR);
@@ -36,18 +35,13 @@ const upload = multer({ storage });
 
 router.use(protect);
 
-
 router.post("/upload", upload.single("file"), uploadFile);
-
 
 router.get("/my-files", getUserFiles);
 
-
 router.get("/download/:id", downloadFile);
 
-
 router.get("/view/:id", viewFile);
-
 
 router.delete("/:id", deleteFile);
 

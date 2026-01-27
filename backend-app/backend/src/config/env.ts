@@ -1,14 +1,30 @@
+import { z } from "zod";
 import dotenv from "dotenv";
+
 dotenv.config();
-export const env = {
-  port: process.env.PORT,
-  jwtSecret: process.env.JWT_SECRET as string,
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN as string,
-  mailHost: process.env.MAIL_HOST as string,
-  mailPort: Number(process.env.MAIL_PORT),
-  mailUser: process.env.MAIL_USER as string,
-  mailPass: process.env.MAIL_PASSWORD as string,
-  mongoUrl: process.env.MONGO_URI as string,
-  vapidPublicKey: process.env.VAPID_PUBLIC_KEY as string,
-  vapidPrivateKey: process.env.VAPID_PRIVATE_KEY as string,
-};
+
+const envSchema = z.object({
+  PORT: z.string().default("3000"),
+  MONGO_URI: z.string().url(),
+  JWT_SECRET: z.string().min(1),
+  JWT_EXPIRES_IN: z.string().default("1d"),
+  MAIL_HOST: z.string().min(1),
+  MAIL_PORT: z.string().transform((v) => parseInt(v, 10)),
+  MAIL_USER: z.string().email(),
+  MAIL_PASSWORD: z.string().min(1),
+  VAPID_PUBLIC_KEY: z.string().min(1),
+  VAPID_PRIVATE_KEY: z.string().min(1),
+});
+
+console.log(" Loading environment variables...");
+console.log("PORT in process.env:", process.env.PORT);
+
+const _env = envSchema.safeParse(process.env);
+
+if (!_env.success) {
+  console.error("Invalid environment variables:", _env.error.format());
+  process.exit(1);
+}
+
+console.log("Env variables validated. PORT:", _env.data.PORT);
+export const env = _env.data;

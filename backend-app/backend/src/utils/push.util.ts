@@ -3,11 +3,11 @@ import { User } from "../models/user.model";
 import { env } from "../config/env";
 import { PushNotificationPayload } from "../types/push.types";
 
-const VAPID_PUBLIC_KEY = env.vapidPublicKey;
-const VAPID_PRIVATE_KEY = env.vapidPrivateKey;
+const VAPID_PUBLIC_KEY = env.VAPID_PUBLIC_KEY;
+const VAPID_PRIVATE_KEY = env.VAPID_PRIVATE_KEY;
 
 webpush.setVapidDetails(
-  `mailto:${env.mailUser}`,
+  `mailto:${env.MAIL_USER}`,
   VAPID_PUBLIC_KEY,
   VAPID_PRIVATE_KEY,
 );

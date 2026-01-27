@@ -10,7 +10,6 @@ export const uploadFile = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
 
   if (!req.file) {
-    // Attempt to notify of failure even if no file was provided in the request
     await sendPushNotification(userId, {
       title: "Upload Failed",
       body: "No file was received by the server.",
@@ -30,9 +29,8 @@ export const uploadFile = catchAsync(async (req: Request, res: Response) => {
       path: filePath,
     });
 
-    // Background push notification
     await sendPushNotification(userId, {
-      title: "File Processed ✅",
+      title: "File Processed",
       body: `${originalname} is now available in your drive.`,
       url: "/dashboard/uploads",
       tag: "upload-success",
@@ -45,7 +43,7 @@ export const uploadFile = catchAsync(async (req: Request, res: Response) => {
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : "Unknown error";
     await sendPushNotification(userId, {
-      title: "Upload Failed ❌",
+      title: "Upload Failed",
       body: `Error processing ${originalname}: ${errorMessage}`,
       tag: "upload-error",
     });

@@ -48,31 +48,39 @@ class JobManager {
   public getJobsByUser(userId: string): Job[] {
     return this.getAllJobs().filter((job) => job.userId === userId);
   }
+  private activeJobsCount: number = 0;
+  private readonly maxParallelJobs: number = 3;
+
   private async runWorker() {
     if (this.isWorkerRunning) return;
     this.isWorkerRunning = true;
-    console.log("[JobWorker] Worker loop started...");
-    while (true) {
+
+    while (this.activeJobsCount < this.maxParallelJobs) {
       const pendingJobs = this.getAllJobs()
         .filter((j) => j.status === "pending")
         .sort((a, b) => {
           if (b.priority !== a.priority) return b.priority - a.priority;
           return a.createdAt.getTime() - b.createdAt.getTime();
         });
+
       const nextJob = pendingJobs[0];
-      if (!nextJob) {
-        console.log("[JobWorker] No more pending jobs. Worker going to sleep.");
-        break;
-      }
-      await this.executeJob(nextJob);
+      if (!nextJob) break;
+
+      this.executeJob(nextJob);
     }
+
     this.isWorkerRunning = false;
   }
   private async executeJob(job: Job) {
+    this.activeJobsCount++;
     this.updateJobStatus(job.id, "processing");
     await new Promise((resolve) => setTimeout(resolve, 500));
     const activeJob = this.jobs.get(job.id);
-    if (!activeJob) return;
+    if (!activeJob) {
+      this.activeJobsCount--;
+      this.runWorker();
+      return;
+    }
     activeJob.startedAt = new Date();
     try {
       console.log(
@@ -95,10 +103,12 @@ class JobManager {
           retries: nextRetry,
           error: `Retry ${nextRetry}: ${errorMessage}`,
         });
-        this.runWorker();
       } else {
         this.updateJobStatus(activeJob.id, "failed", { error: errorMessage });
       }
+    } finally {
+      this.activeJobsCount--;
+      this.runWorker();
     }
   }
   private updateJobStatus(

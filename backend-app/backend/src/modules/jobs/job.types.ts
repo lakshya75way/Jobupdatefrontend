@@ -4,7 +4,7 @@ export interface JobMetadata {
 }
 export interface Job {
   id: string;
-  userId: string; // Added to track ownership
+  userId: string;
   type: string;
   status: JobStatus;
   data: JobMetadata;

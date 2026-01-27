@@ -30,7 +30,8 @@ export const getUserFilesService = async (
 ): Promise<IFile[]> => {
   const query: QueryFilter<IFile> = { userId };
   if (search) {
-    query.originalName = { $regex: search, $options: "i" };
+    const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    query.originalName = { $regex: escapedSearch, $options: "i" };
   }
   const files = await File.find(query).sort({ createdAt: -1 });
 

@@ -119,13 +119,11 @@ export const updatePushSub = async (
   const user = await User.findById(userId);
   if (!user) return;
 
-  // Check if endpoint already exists
   const existingIndex = user.pushSubscriptions?.findIndex(
     (sub) => sub.endpoint === subscription.endpoint,
   );
 
   if (existingIndex !== undefined && existingIndex >= 0) {
-    // Update existing subscription
     await User.findByIdAndUpdate(userId, {
       $set: {
         [`pushSubscriptions.${existingIndex}.lastUsedAt`]: new Date(),
@@ -134,7 +132,6 @@ export const updatePushSub = async (
       },
     });
   } else {
-    // Add new subscription with metadata
     await User.findByIdAndUpdate(userId, {
       $push: {
         pushSubscriptions: {

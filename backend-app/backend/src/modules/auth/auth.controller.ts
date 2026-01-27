@@ -55,7 +55,7 @@ export const forgotPassword = catchAsync(
 );
 export const resetPassword = catchAsync(async (req: Request, res: Response) => {
   const data = resetPassSchema.parse(req.body);
-  await resetPass(req.params.token, data.password);
+  await resetPass(data.token, data.newPassword);
   res.json({ message: "pass reset done" });
 });
 export const refreshToken = catchAsync(async (req: Request, res: Response) => {
@@ -92,21 +92,19 @@ export const deletePushSubscription = catchAsync(
 export const scheduleTestNotification = catchAsync(
   async (req: Request, res: Response) => {
     const userId = req.user!.userId;
-    const delay = 10000; // 10 seconds
+    const delay = 10000;
     res.json({
       message: `Test notification scheduled in ${delay / 1000}s. You can close the tab now!`,
     });
     setTimeout(async () => {
       try {
         await sendPushNotification(userId, {
-          title: "Background Test Successful! 🚀",
+          title: "Background Test Successful!",
           body: "This notification was sent 10 seconds after you requested it, even if the tab was closed.",
           url: "/dashboard/profile",
           tag: "background-test",
         });
-      } catch (err) {
-        // Silent fail - notification delivery is best-effort
-      }
+      } catch (err) {}
     }, delay);
   },
 );
